@@ -1,0 +1,159 @@
+//STOPWATCH by Arduino Makers
+int nummin=0;
+int numsec=0;
+int  numdigit[3] = { 0,0,0 };
+int digit = 0;
+int tick = 0;
+int stopwatch = 0;  // 0:stop(reset), 1:go, 2:pause 
+int stateflag = 0;
+int btn = LOW;
+int  btntick = 0;
+int startflag = 1;
+
+void setup() {
+  
+  pinMode(2,OUTPUT);
+  pinMode(3,OUTPUT);  
+  pinMode(4,OUTPUT);
+  pinMode(5,OUTPUT);
+  pinMode(6,OUTPUT);
+  pinMode(7,OUTPUT);
+  pinMode(8,OUTPUT); 
+  pinMode(9,OUTPUT);
+  pinMode(10,INPUT);
+  pinMode(11,OUTPUT);
+  pinMode(12,OUTPUT);
+  pinMode(13,OUTPUT);
+  digitalWrite(11,LOW);
+  digitalWrite(12,LOW);
+  digitalWrite(13,LOW);
+
+}
+
+void displayStart()
+{
+    int data[7][2] = { {10,0},{10,1},{10,2},{3,2},{2,1},{1,0},{10,1} };
+
+    for(int i=0;i<7;i++){
+      displayNumber(data[i][0],data[i][1]);
+      delay(500);
+    }
+
+    startflag=0;  
+}
+
+void loop() 
+{
+  // put your main  code here, to run repeatedly:
+
+  if(startflag==1){
+    displayStart();
+  }
+  
+  if(btntick==0){
+    btn = digitalRead(10);    
+    if(btn==HIGH){
+      displayNumber(10,1);
+      delay(1000);     
+      if(stopwatch==0)     stopwatch=1;
+      else if(stopwatch==1) stopwatch=2;
+      else if(stopwatch==2)  stopwatch=0;
+    }
+  }
+  btntick++;
+  if(btntick>=20){
+      btntick=0;
+  }
+
+  displayNumber(numdigit[digit],digit);
+  delay(5);
+
+  digit++;
+  if(digit>2) digit=0;  
+
+  if(stopwatch==1){
+     tick++;
+     if(tick>=200){
+       tick=0;
+       numsec++;
+       if(numsec>=60){
+          numsec=0;
+          nummin++;
+          if(nummin>9){
+            nummin=0;
+            numsec=0;
+            stopwatch=0;
+          }
+       }
+       divideTimeTo3Digit(nummin,numsec);
+     }
+  }else if(stopwatch==2){
+    stateflag=1;     
+  }else if(stopwatch==0){
+    if(stateflag==1){
+      nummin=0;
+      numsec=0;
+      divideTimeTo3Digit(nummin,numsec);  
+      stateflag=0;
+    }
+  }  
+}
+
+void divideTimeTo3Digit(int  m,int s)
+{
+  numdigit[2] = s%10;
+  numdigit[1] = s/10;
+  numdigit[0]  = m;  
+}
+
+void divideNumberTo3Digit(int n)
+{
+  numdigit[2] = n %  10;
+  numdigit[1] = (n / 10) % 10 ;
+  numdigit[0] = n / 100;
+}
+
+void  displayNumber(int n,int idx)
+{
+  turnOnDigit(idx);
+  displayCharacter(n);
+}
+
+void  turnOnDigit(int idx)
+{
+    switch(idx){
+      case 0 : digitalWrite(11,LOW);
+               digitalWrite(12,HIGH);
+               digitalWrite(13,HIGH);
+               break;
+      case 1 : digitalWrite(11,HIGH);
+               digitalWrite(12,LOW);
+               digitalWrite(13,HIGH);
+               break;
+      case 2 :  digitalWrite(11,HIGH);
+               digitalWrite(12,HIGH);
+               digitalWrite(13,LOW);
+               break;
+    }
+}
+
+void displayCharacter(int n)
+{
+  if((n<0)||(n>10)) return;
+  
+  int chartable[11][7] = { { HIGH,HIGH,HIGH,HIGH,HIGH,HIGH,LOW  }, //0
+                           { LOW ,HIGH,HIGH,LOW ,LOW ,LOW ,LOW  }, //1
+                           { HIGH,HIGH,LOW ,HIGH,HIGH,LOW ,HIGH }, //2
+                           {  HIGH,HIGH,HIGH,HIGH,LOW ,LOW ,HIGH }, //3
+                           { LOW ,HIGH,HIGH,LOW  ,LOW ,HIGH,HIGH }, //4
+                           { HIGH,LOW ,HIGH,HIGH,LOW ,HIGH,HIGH  }, //5
+                           { HIGH,LOW ,HIGH,HIGH,HIGH,HIGH,HIGH }, //6
+                           { HIGH,HIGH,HIGH,LOW ,LOW ,LOW ,LOW  }, //7
+                           {  HIGH,HIGH,HIGH,HIGH,HIGH,HIGH,HIGH }, //8
+                           { HIGH,HIGH,HIGH,HIGH,LOW  ,HIGH,HIGH }, //9
+                           { LOW ,LOW, LOW, LOW, LOW ,LOW ,HIGH  } }; //- 
+
+  for(int i=0;i<7;i++){
+    digitalWrite(2+i,chartable[n][i]);
+  }
+}
